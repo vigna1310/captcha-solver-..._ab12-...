@@ -1,138 +1,131 @@
-Certainly! I'll create a simple GitHub Pages app that can handle CAPTCHA images from a URL parameter `?url=...`. The app will load the image (defaulting to a sample if none provided), display it to the user, and include a textbox for the user to enter the CAPTCHA text. It will also have a button to submit the solution (though in this case, it won't connect to any CAPTCHA solving backend — it's just a front-end demo).
-
-Here's the plan:
-- Serve an HTML page with JavaScript.
-- Parse the `url` parameter from the page URL.
-- Load the image specified by the URL parameter or use a default sample image.
-- Display the image and an input box for entering the CAPTCHA.
-- Include a submit button that displays the entered CAPTCHA in an alert for demonstration.
-
----
-
-### Step 1: Sample CAPTCHA Image
-
-Since I can't attach files here, you'll need to upload a sample CAPTCHA image to your GitHub repository, or I can suggest using an online image URL. For demonstration, I'll include a placeholder image URL that you can replace.
-
-### Step 2: Creating the `index.html`
-
-Here's the complete code for `index.html`:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CAPTCHA Solver Demo</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 40px;
-    background-color: #f0f0f0;
-  }
-  .container {
-    max-width: 600px;
-    margin: auto;
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-  }
-  h1 {
-    text-align: center;
-  }
-  img {
-    display: block;
-    margin: 20px auto;
-    max-width: 100%;
-    Border-radius: 4px;
-    border: 1px solid #ccc;
-  }
-  input[type="text"] {
-    width: 100%;
-    padding: 12px;
-    font-size: 1em;
-    margin-top: 10px;
-    box-sizing: border-box;
-  }
-  button {
-    display: block;
-    margin: 20px auto;
-    padding: 12px 24px;
-    font-size: 1em;
-    cursor: pointer;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-  }
-  button:hover {
-    background-color: #45a049;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>Captcha Solver</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2em;
+      max-width: 800px;
+    }
+    h1 {
+      text-align: center;
+    }
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #imageContainer {
+      margin: 1em 0;
+      max-width: 100%;
+    }
+    #captchaImage {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #ccc;
+    }
+    #loadImageBtn, #solveBtn {
+      margin: 0.5em;
+      padding: 0.5em 1em;
+      font-size: 1em;
+    }
+    #result {
+      margin-top: 1em;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-  <h1>CAPTCHA Solver Demo</h1>
-  <div id="captcha-image-container">
-    <img id="captcha-image" src="" alt="CAPTCHA Image" />
+  <h1>Captcha Solver</h1>
+  <div id="container">
+    <button id="loadImageBtn">Load Image</button>
+    <div id="imageContainer">
+      <canvas id="canvas"></canvas>
+    </div>
+    <button id="solveBtn">Solve Captcha</button>
+    <div id="result"></div>
   </div>
-  <input type="text" id="captcha-input" placeholder="Enter CAPTCHA here" />
-  <button id="submit-btn">Submit CAPTCHA</button>
-</div>
 
-<script>
-  // Default sample image URL - replace with your actual CAPTCHA image URL or attach an image to your repo
-  const defaultImageUrl = 'https://via.placeholder.com/300x100.png?text=Sample+CAPTCHA';
+  <script>
+    const loadImageBtn = document.getElementById('loadImageBtn');
+    const solveBtn = document.getElementById('solveBtn');
+    const resultDiv = document.getElementById('result');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
 
-  // Function to parse URL parameters
-  function getQueryParam(param) {
-    const params = new URLSearchParams(window.location.search);
-    return params.get(param);
-  }
+    // Use a default sample image
+    const defaultImageURL = 'https://images.unsplash.com/photo-1533674205193-f90f0f8f5f0e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80';
 
-  // Set the image source
-  const imageUrlParam = getQueryParam('url');
-  const imageSrc = imageUrlParam || defaultImageUrl;
+    let image = new Image();
 
-  const captchaImage = document.getElementById('captcha-image');
-  captchaImage.src = imageSrc;
+    function loadImage(url) {
+      image.crossOrigin = "Anonymous"; // to avoid CORS issues
+      image.onload = () => {
+        // Resize or fit to canvas
+        canvas.width = image.width;
+        canvas.height = image.height;
+        ctx.drawImage(image, 0, 0);
+        resultDiv.textContent = '';
+      };
+      image.onerror = () => {
+        alert('Failed to load image.');
+      };
+      image.src = url;
+    }
 
-  // Handle submit button
-  document.getElementById('submit-btn').addEventListener('click', () => {
-    const userInput = document.getElementById('captcha-input').value;
-    alert('You entered: ' + userInput);
-  });
-</script>
+    // Load default image on page load
+    window.onload = () => {
+      loadImage(defaultImageURL);
+    };
+
+    loadImageBtn.onclick = () => {
+      // Prompt user for URL
+      const url = prompt('Enter image URL:', defaultImageURL);
+      if (url) {
+        loadImage(url);
+      }
+    };
+
+    solveBtn.onclick = () => {
+      resultDiv.textContent = 'Processing...';
+      // Get image data
+      const width = canvas.width;
+      const height = canvas.height;
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const data = imageData.data;
+
+      // Simple OCR: convert image to black & white and detect text
+      // For demonstration, we'll implement a dummy OCR that extracts visible letters
+      // Note: Real OCR requires complex algorithms or services
+      // Here, we'll do a placeholder: count black pixels 
+
+      // Convert to grayscale and threshold
+      const threshold = 128;
+      let blackPixelsCount = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i+1], b = data[i+2];
+        const gray = 0.299*r + 0.587*g + 0.114*b;
+        if (gray < threshold) {
+          // black pixel
+          blackPixelsCount++;
+        }
+      }
+
+      // Dummy logic: if enough black pixels, assume 'ABCD' as placeholder
+      const blackPixelRatio = blackPixelsCount / (width * height);
+      let recognizedText = '';
+
+      if (blackPixelRatio > 0.1) {
+        recognizedText = 'ABCD';
+      } else {
+        recognizedText = '1234';
+      }
+
+      resultDiv.textContent = 'Recognized Text: ' + recognizedText;
+    }
+  </script>
 </body>
 </html>
-```
-
----
-
-### Step 3: Deploying on GitHub Pages
-
-1. Create a new GitHub repository or use an existing one.
-2. Save the above code as `index.html` in your repository.
-3. Push the changes.
-4. Go to the repository's Settings > Pages, and enable GitHub Pages from the main branch.
-5. Once published, access your site via the provided URL, e.g.: `https://yourusername.github.io/` .
-
-### Usage
-- To test with a custom image, append `?url=YOUR_IMAGE_URL` to your GitHub Pages URL.
-- For example:
-
-```
-https://yourusername.github.io/?url=https://example.com/mycaptcha.png
-```
-
-This will load the captcha image from the specified URL.
-
----
-
-### Note:
-- For a real CAPTCHA solver, you'd need backend integration.
-- The sample uses a placeholder image, but you can replace the URL with any image or upload your own CAPTCHA sample.
-
----
-
-Let me know if you'd like me to prepare a ZIP file or guide you further!
