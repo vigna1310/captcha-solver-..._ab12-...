@@ -1,138 +1,160 @@
+Certainly! I'll create a simple GitHub Pages app that acts as a CAPTCHA solver for images specified via a URL parameter (`?url=`). For the purpose of this demo, I'll assume that the CAPTCHA images are simple enough to be processed with basic techniques. 
+
+Since this is a demo, I will:
+- Load an image from the URL parameter (or default to a sample image).
+- Use a basic image processing approach to recognize the CAPTCHA. 
+- **Note:** Real CAPTCHA solving often requires OCR (Optical Character Recognition) libraries like Tesseract.js. For demonstration, I will incorporate Tesseract.js into the page, allowing it to process the images and extract text.
+
+**Here's the plan:**
+- An HTML page with:
+  - An input to specify the URL.
+  - An image display.
+  - A button to "Solve" the CAPTCHA.
+  - An area to display the recognized text.
+- When the page loads, it will check if `?url=` parameter is present and load that image.  
+- If not, default to a sample image we will embed (or link to).
+
+---
+
+### Complete OAuth2 Demo App for GitHub Pages
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Captcha Solver</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 2em;
-      max-width: 800px;
-    }
-    h1 {
-      text-align: center;
-    }
-    #container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    #imageContainer {
-      margin: 1em 0;
-      max-width: 100%;
-    }
-    #captchaImage {
-      max-width: 100%;
-      height: auto;
-      border: 1px solid #ccc;
-    }
-    #loadImageBtn, #solveBtn {
-      margin: 0.5em;
-      padding: 0.5em 1em;
-      font-size: 1em;
-    }
-    #result {
-      margin-top: 1em;
-      font-size: 1.2em;
-      font-weight: bold;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Captcha Solver</title>
+<!-- Include Tesseract.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+  }
+  #captcha-image {
+    max-width: 300px;
+    border: 1px solid #ccc;
+    margin-top: 10px;
+  }
+  #result {
+    margin-top: 10px;
+    font-size: 1.2em;
+    font-weight: bold;
+  }
+  #loading {
+    display: none;
+  }
+</style>
 </head>
 <body>
-  <h1>Captcha Solver</h1>
-  <div id="container">
-    <button id="loadImageBtn">Load Image</button>
-    <div id="imageContainer">
-      <canvas id="canvas"></canvas>
-    </div>
-    <button id="solveBtn">Solve Captcha</button>
-    <div id="result"></div>
-  </div>
 
-  <script>
-    const loadImageBtn = document.getElementById('loadImageBtn');
-    const solveBtn = document.getElementById('solveBtn');
-    const resultDiv = document.getElementById('result');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+<h1>Captcha Solver Demo</h1>
 
-    // Use a default sample image
-    const defaultImageURL = 'https://images.unsplash.com/photo-1533674205193-f90f0f8f5f0e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80';
+<label for="imageUrl">Image URL:</label>
+<input type="text" id="imageUrl" size="50" placeholder="Enter CAPTCHA image URL" />
+<button id="loadBtn">Load Image</button>
 
-    let image = new Image();
+<div>
+  <img id="captcha-image" src="" alt="Captcha Image" />
+</div>
 
-    function loadImage(url) {
-      image.crossOrigin = "Anonymous"; // allow cross-origin use if possible
+<button id="solveBtn">Solve CAPTCHA</button>
 
-  // ✅ Wrap the URL with a CORS proxy
-      const proxiedURL = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+<div id="loading">Processing...</div>
+<div id="result"></div>
 
-      image.onload = () => {
-        canvas.width = image.width;
-        canvas.height = image.height;
-        ctx.drawImage(image, 0, 0);
-        resultDiv.textContent = '';
-      };
+<script>
+  // Default sample image (embedded as base64 or hosted somewhere)
+  const defaultImage = 'https://i.imgur.com/1e7bywK.png'; // Example placeholder image
 
-      image.onerror = () => {
-    // fallback in case proxy or URL fails
-        alert('Failed to load image. Try enabling the proxy or using a CORS-friendly image source.');
-      };
+  // Function to get URL parameter
+  function getUrlParameter(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+  }
 
-      image.src = proxiedURL; // load via proxy
+  // Function to load image from URL parameter or default
+  function loadImage() {
+    const urlParam = getUrlParameter('url');
+    const imageUrlInput = document.getElementById('imageUrl');
+    const img = document.getElementById('captcha-image');
+
+    if (urlParam) {
+      img.src = urlParam;
+      imageUrlInput.value = urlParam;
+    } else {
+      img.src = defaultImage;
+      imageUrlInput.value = defaultImage;
     }
+  }
 
+  document.getElementById('loadBtn').addEventListener('click', () => {
+    const url = document.getElementById('imageUrl').value;
+    if (url) {
+      document.getElementById('captcha-image').src = url;
+    }
+  });
 
-    // Load default image on page load
-    window.onload = () => {
-      loadImage(defaultImageURL);
-    };
+  document.getElementById('solveBtn').addEventListener('click', () => {
+    const img = document.getElementById('captcha-image');
+    const loadingEl = document.getElementById('loading');
+    const resultEl = document.getElementById('result');
 
-    loadImageBtn.onclick = () => {
-      // Prompt user for URL
-      const url = prompt('Enter image URL:', defaultImageURL);
-      if (url) {
-        loadImage(url);
-      }
-    };
+    // Show loading
+    loadingEl.style.display = 'block';
+    resultEl.textContent = '';
 
-    solveBtn.onclick = () => {
-      resultDiv.textContent = 'Processing...';
-      // Get image data
-      const width = canvas.width;
-      const height = canvas.height;
-      const imageData = ctx.getImageData(0, 0, width, height);
-      const data = imageData.data;
-
-      // Simple OCR: convert image to black & white and detect text
-      // For demonstration, we'll implement a dummy OCR that extracts visible letters
-      // Note: Real OCR requires complex algorithms or services
-      // Here, we'll do a placeholder: count black pixels 
-
-      // Convert to grayscale and threshold
-      const threshold = 128;
-      let blackPixelsCount = 0;
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i], g = data[i+1], b = data[i+2];
-        const gray = 0.299*r + 0.587*g + 0.114*b;
-        if (gray < threshold) {
-          // black pixel
-          blackPixelsCount++;
+    // Use Tesseract.js to recognize the text
+    Tesseract.recognize(
+      img.src,
+      'eng',
+      {
+        logger: m => {
+          // Optionally, you can console.log(m);
         }
       }
+    ).then(({ data: { text } }) => {
+      // Show recognized text
+      resultEl.textContent = `Recognized: ${text.trim()}`;
+      loadingEl.style.display = 'none';
+    }).catch(err => {
+      resultEl.textContent = `Error: ${err.message}`;
+      loadingEl.style.display = 'none';
+    });
+  });
 
-      // Dummy logic: if enough black pixels, assume 'ABCD' as placeholder
-      const blackPixelRatio = blackPixelsCount / (width * height);
-      let recognizedText = '';
-
-      if (blackPixelRatio > 0.1) {
-        recognizedText = 'ABCD';
-      } else {
-        recognizedText = '1234';
-      }
-
-      resultDiv.textContent = 'Recognized Text: ' + recognizedText;
+  // On page load, initialize
+  window.onload = () => {
+    const urlParam = getUrlParameter('url');
+    if (urlParam) {
+      document.getElementById('imageUrl').value = urlParam;
     }
-  </script>
+    loadImage();
+  };
+</script>
+
 </body>
 </html>
+```
+
+---
+
+### How to Use:
+
+1. Save this code as `index.html`.
+2. Host it with GitHub Pages or any static web host.
+3. Access with:
+   ```
+   https://yourusername.github.io/index.html?url=https://example.com/image.png
+   ```
+4. If no `?url=` parameter is provided, it defaults to the sample image.
+
+---
+
+### Notes:
+- The demo uses [Tesseract.js](https://github.com/tesseract-ocr/tesseract.js), a JavaScript OCR library, for text recognition.
+- For actual CAPTCHA solving, you'd need well-designed images or more sophisticated preprocessing.
+- The sample image URL should point to a simple, OCR-friendly image for best results.
+
+Let me know if you'd like me to prepare a ready-to-deploy GitHub repository or customize further!
