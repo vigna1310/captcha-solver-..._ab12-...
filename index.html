@@ -62,19 +62,26 @@
     let image = new Image();
 
     function loadImage(url) {
-      image.crossOrigin = "Anonymous"; // to avoid CORS issues
+      image.crossOrigin = "Anonymous"; // allow cross-origin use if possible
+
+  // ✅ Wrap the URL with a CORS proxy
+      const proxiedURL = `https://cors-anywhere.herokuapp.com/${url}`;
+
       image.onload = () => {
-        // Resize or fit to canvas
         canvas.width = image.width;
         canvas.height = image.height;
         ctx.drawImage(image, 0, 0);
         resultDiv.textContent = '';
       };
+
       image.onerror = () => {
-        alert('Failed to load image.');
+    // fallback in case proxy or URL fails
+        alert('Failed to load image. Try enabling the proxy or using a CORS-friendly image source.');
       };
-      image.src = url;
+
+      image.src = proxiedURL; // load via proxy
     }
+
 
     // Load default image on page load
     window.onload = () => {
