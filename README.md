@@ -1,1 +1,5 @@
-# captcha-solver-..._ab12-...
+# Generated App
+
+Task: Create a captcha solver that handles ?url=https://.../image.png. Default to attached sample.
+
+Generated via AIPipe OpenRouter.
